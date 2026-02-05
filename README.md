@@ -132,7 +132,27 @@ USING (
 );
 ```
 
-#### d. Désactiver la confirmation email (optionnel)
+#### d. Charger les données initiales (optionnel)
+
+Pour tester l'application avec des données pré-remplies, exécutez le script `003_seed_initial_data.sql` :
+
+```sql
+-- Ce script crée :
+-- - 1 utilisateur de test (user@yopmail.com / Azertyu.1)
+-- - 5 todos en cours
+-- - 10 todos terminées
+
+-- Voir le fichier complet : supabase/migrations/003_seed_initial_data.sql
+```
+
+**Utilisateur de test :**
+| Champ | Valeur |
+|-------|--------|
+| Nom | Utilisateur |
+| Email | user@yopmail.com |
+| Mot de passe | Azertyu.1 |
+
+#### e. Désactiver la confirmation email (optionnel)
 
 1. Allez dans **Authentication > Providers > Email**
 2. Désactivez **"Confirm email"**
@@ -195,8 +215,9 @@ nuxt-tp1/
 │       └── validation.ts       # Schémas de validation Zod
 ├── supabase/
 │   └── migrations/
-│       ├── 001_setup_todos_rls.sql     # Script SQL table todos
-│       └── 002_setup_avatars_storage.sql # Script SQL bucket avatars
+│       ├── 001_setup_todos_rls.sql       # Script SQL table todos
+│       ├── 002_setup_avatars_storage.sql # Script SQL bucket avatars
+│       └── 003_seed_initial_data.sql     # Données initiales (utilisateur + todos)
 ├── public/                     # Assets statiques
 ├── nuxt.config.ts              # Configuration Nuxt
 ├── tailwind.config.js          # Configuration Tailwind CSS
