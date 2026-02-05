@@ -134,23 +134,24 @@ USING (
 
 #### d. Charger les données initiales (optionnel)
 
-Pour tester l'application avec des données pré-remplies, exécutez le script `003_seed_initial_data.sql` :
+Pour tester l'application avec des données pré-remplies, exécutez le script `003_seed_initial_data.sql`.
 
-```sql
--- Ce script crée :
--- - 1 utilisateur de test (user@yopmail.com / Azertyu.1)
--- - 5 todos en cours
--- - 10 todos terminées
+**Prérequis :** Un utilisateur doit déjà exister dans Supabase Auth (créé via l'application ou le Dashboard).
 
--- Voir le fichier complet : supabase/migrations/003_seed_initial_data.sql
-```
+**Instructions :**
 
-**Utilisateur de test :**
-| Champ | Valeur |
-|-------|--------|
-| Nom | Utilisateur |
-| Email | user@yopmail.com |
-| Mot de passe | Azertyu.1 |
+1. Récupérez l'UUID de votre utilisateur dans **Authentication > Users**
+2. Ouvrez le fichier `supabase/migrations/003_seed_initial_data.sql`
+3. Modifiez avec votre UUID :
+   ```sql
+   seed_user_id UUID := 'votre-uuid-ici';
+   ```
+4. Exécutez le script dans **SQL Editor**
+
+**Résultat :**
+
+- 5 todos avec le statut "en cours"
+- 10 todos avec le statut "terminé"
 
 #### e. Désactiver la confirmation email (optionnel)
 
