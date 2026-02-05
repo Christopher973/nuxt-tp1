@@ -1,6 +1,12 @@
 <script setup lang="ts">
 import type { Todo } from "~/types";
-import type { LoginInput, RegisterInput, TodoInput } from "~/utils/validation";
+import type {
+  LoginInput,
+  RegisterInput,
+  TodoInput,
+  ProfileInput,
+  PasswordChangeInput,
+} from "~/utils/validation";
 
 /**
  * Composant principal de l'application Todo
@@ -17,6 +23,10 @@ const {
   signIn,
   signOut,
   getSession,
+  updateProfile,
+  updatePassword,
+  uploadAvatar,
+  removeAvatar,
 } = useAuth();
 
 const {
@@ -33,10 +43,12 @@ const {
 
 // État local de l'interface
 const authView = ref<"login" | "register">("login");
+const currentView = ref<"todos" | "profile">("todos");
 const showTodoForm = ref(false);
 const editingTodo = ref<Todo | null>(null);
 const showDeleteModal = ref(false);
 const todoToDelete = ref<Todo | null>(null);
+const isProfileLoading = ref(false);
 
 // Message d'erreur global
 const globalError = ref<string | null>(null);
@@ -92,6 +104,7 @@ async function handleLogout() {
     editingTodo.value = null;
     showDeleteModal.value = false;
     todoToDelete.value = null;
+    currentView.value = "todos";
   } else {
     globalError.value = result.error || "Erreur lors de la déconnexion";
   }
@@ -205,6 +218,98 @@ function openCreateForm() {
 function dismissError() {
   globalError.value = null;
 }
+
+/**
+ * Ouvre la page de profil
+ */
+function openProfile() {
+  currentView.value = "profile";
+}
+
+/**
+ * Retourne à la liste des todos
+ */
+function backToTodos() {
+  currentView.value = "todos";
+}
+
+/**
+ * Gestion de la mise à jour du profil
+ */
+async function handleUpdateProfile(data: ProfileInput) {
+  globalError.value = null;
+  isProfileLoading.value = true;
+
+  try {
+    const result = await updateProfile(data.fullName, data.email);
+
+    if (!result.success) {
+      globalError.value =
+        result.error || "Erreur lors de la mise à jour du profil";
+    }
+  } finally {
+    isProfileLoading.value = false;
+  }
+}
+
+/**
+ * Gestion du changement de mot de passe
+ */
+async function handleUpdatePassword(data: PasswordChangeInput) {
+  globalError.value = null;
+  isProfileLoading.value = true;
+
+  try {
+    const result = await updatePassword(data.newPassword);
+
+    if (result.success) {
+      // Afficher un message de succès (optionnel)
+      globalError.value = null;
+    } else {
+      globalError.value =
+        result.error || "Erreur lors du changement de mot de passe";
+    }
+  } finally {
+    isProfileLoading.value = false;
+  }
+}
+
+/**
+ * Gestion de l'upload d'avatar
+ */
+async function handleUpdateAvatar(file: File) {
+  globalError.value = null;
+  isProfileLoading.value = true;
+
+  try {
+    const result = await uploadAvatar(file);
+
+    if (!result.success) {
+      globalError.value = result.error || "Erreur lors de l'upload de l'avatar";
+    }
+  } finally {
+    isProfileLoading.value = false;
+  }
+}
+
+/**
+ * Gestion de la suppression d'avatar
+ */
+async function handleRemoveAvatar() {
+  globalError.value = null;
+  isProfileLoading.value = true;
+
+  try {
+    const result = await removeAvatar();
+
+    if (!result.success) {
+      globalError.value =
+        result.error || "Erreur lors de la suppression de l'avatar";
+    }
+  } finally {
+    isProfileLoading.value = false;
+  }
+}
 </script>
 
 <template>
@@ -213,7 +318,9 @@ function dismissError() {
     <AppHeader
       :is-authenticated="isAuthenticated"
       :user-full-name="currentUser?.fullName"
+      :user-avatar-url="currentUser?.avatarUrl"
       @logout="handleLogout"
+      @open-profile="openProfile"
     />
 
     <!-- Message d'erreur global -->
@@ -309,28 +416,45 @@ function dismissError() {
 
       <!-- Vue authentifiée : Gestion des todos -->
       <template v-else>
-        <!-- Formulaire de création/modification -->
-        <div v-if="showTodoForm" class="mb-8">
-          <TodoForm
-            :todo="editingTodo"
-            :is-editing="!!editingTodo"
-            @submit="
-              editingTodo ? handleUpdateTodo($event) : handleCreateTodo($event)
-            "
-            @cancel="cancelForm"
-          />
-        </div>
-
-        <!-- Liste des todos -->
-        <TodoList
-          v-else
-          :todos="todos"
-          :is-loading="isLoadingTodos"
-          @create="openCreateForm"
-          @edit="openEditForm"
-          @delete="openDeleteModal"
-          @toggle-status="handleToggleStatus"
+        <!-- Vue Profil -->
+        <ProfileView
+          v-if="currentView === 'profile' && currentUser"
+          :user="currentUser"
+          :is-loading="isProfileLoading"
+          @update-profile="handleUpdateProfile"
+          @update-password="handleUpdatePassword"
+          @update-avatar="handleUpdateAvatar"
+          @remove-avatar="handleRemoveAvatar"
+          @back="backToTodos"
         />
+
+        <!-- Vue Todos -->
+        <template v-else>
+          <!-- Formulaire de création/modification -->
+          <div v-if="showTodoForm" class="mb-8">
+            <TodoForm
+              :todo="editingTodo"
+              :is-editing="!!editingTodo"
+              @submit="
+                editingTodo
+                  ? handleUpdateTodo($event)
+                  : handleCreateTodo($event)
+              "
+              @cancel="cancelForm"
+            />
+          </div>
+
+          <!-- Liste des todos -->
+          <TodoList
+            v-else
+            :todos="todos"
+            :is-loading="isLoadingTodos"
+            @create="openCreateForm"
+            @edit="openEditForm"
+            @delete="openDeleteModal"
+            @toggle-status="handleToggleStatus"
+          />
+        </template>
       </template>
     </main>
 

@@ -19,6 +19,7 @@ Ce projet a été réalisé dans le cadre d'un cours de développement full stac
 - **Authentification** : Inscription et connexion avec email et mot de passe
 - **Gestion des tâches** : Création, modification, suppression et changement de statut
 - **Filtres** : Affichage par statut (toutes, en cours, terminées)
+- **Profil utilisateur** : Modification des informations personnelles et photo de profil
 - **Interface responsive** : Compatible mobile, tablette et desktop
 
 ## Technologies utilisées
@@ -89,7 +90,49 @@ CREATE POLICY "Users can update their own todos" ON todos FOR UPDATE USING (auth
 CREATE POLICY "Users can delete their own todos" ON todos FOR DELETE USING (auth.uid() = user_id);
 ```
 
-#### c. Désactiver la confirmation email (optionnel)
+#### c. Créer le bucket Storage pour les avatars
+
+1. Allez dans **Storage** dans le menu de gauche
+2. Cliquez sur **New bucket**
+3. Configurez :
+   - **Name** : `avatars`
+   - **Public bucket** : Activé
+4. Cliquez sur **Create bucket**
+
+Puis exécutez ce script SQL pour configurer les politiques :
+
+```sql
+-- Politique SELECT : Tout le monde peut voir les avatars (bucket public)
+CREATE POLICY "Avatars are publicly accessible"
+ON storage.objects FOR SELECT
+USING (bucket_id = 'avatars');
+
+-- Politique INSERT : Les utilisateurs peuvent uploader leur propre avatar
+CREATE POLICY "Users can upload their own avatar"
+ON storage.objects FOR INSERT
+WITH CHECK (
+  bucket_id = 'avatars'
+  AND auth.uid()::text = (storage.foldername(name))[1]
+);
+
+-- Politique UPDATE : Les utilisateurs peuvent modifier leur propre avatar
+CREATE POLICY "Users can update their own avatar"
+ON storage.objects FOR UPDATE
+USING (
+  bucket_id = 'avatars'
+  AND auth.uid()::text = (storage.foldername(name))[1]
+);
+
+-- Politique DELETE : Les utilisateurs peuvent supprimer leur propre avatar
+CREATE POLICY "Users can delete their own avatar"
+ON storage.objects FOR DELETE
+USING (
+  bucket_id = 'avatars'
+  AND auth.uid()::text = (storage.foldername(name))[1]
+);
+```
+
+#### d. Désactiver la confirmation email (optionnel)
 
 1. Allez dans **Authentication > Providers > Email**
 2. Désactivez **"Confirm email"**
@@ -120,7 +163,7 @@ L'application sera accessible sur `http://localhost:3000`
 
 ## Structure du projet
 
-```
+```text
 nuxt-tp1/
 ├── app/
 │   ├── app.vue                 # Composant principal de l'application
@@ -130,22 +173,30 @@ nuxt-tp1/
 │   │   ├── auth/
 │   │   │   ├── LoginForm.vue   # Formulaire de connexion
 │   │   │   └── RegisterForm.vue # Formulaire d'inscription
+│   │   ├── profile/
+│   │   │   ├── Avatar.vue      # Affichage de l'avatar utilisateur
+│   │   │   ├── AvatarUpload.vue # Modal d'upload de photo
+│   │   │   ├── EditForm.vue    # Formulaire modification profil
+│   │   │   ├── PasswordForm.vue # Formulaire changement mot de passe
+│   │   │   └── View.vue        # Page complète du profil
 │   │   └── todo/
 │   │       ├── Form.vue        # Formulaire création/édition
 │   │       ├── List.vue        # Liste des tâches avec filtres
 │   │       ├── Item.vue        # Carte individuelle d'une tâche
 │   │       └── DeleteModal.vue # Modal de confirmation de suppression
 │   ├── composables/
-│   │   ├── useAuth.ts          # Gestion de l'authentification
+│   │   ├── useAuth.ts          # Gestion de l'authentification et profil
 │   │   └── useTodos.ts         # Opérations CRUD sur les todos
 │   ├── types/
 │   │   ├── index.ts            # Types de l'application (User, Todo)
 │   │   └── database.ts         # Types Supabase (Database)
 │   └── utils/
-│       └── supabase.ts         # Client Supabase configuré
+│       ├── supabase.ts         # Client Supabase configuré
+│       └── validation.ts       # Schémas de validation Zod
 ├── supabase/
 │   └── migrations/
-│       └── 001_setup_todos_rls.sql  # Script SQL de création
+│       ├── 001_setup_todos_rls.sql     # Script SQL table todos
+│       └── 002_setup_avatars_storage.sql # Script SQL bucket avatars
 ├── public/                     # Assets statiques
 ├── nuxt.config.ts              # Configuration Nuxt
 ├── tailwind.config.js          # Configuration Tailwind CSS
@@ -157,7 +208,10 @@ nuxt-tp1/
 
 ### Composables
 
-- **useAuth** : Gère l'authentification (signUp, signIn, signOut, getSession)
+- **useAuth** : Gère l'authentification et le profil utilisateur
+  - `signUp`, `signIn`, `signOut`, `getSession` : Authentification
+  - `updateProfile`, `updatePassword` : Modification du profil
+  - `uploadAvatar`, `removeAvatar` : Gestion de la photo de profil
 - **useTodos** : Gère le CRUD des todos (fetchTodos, createTodo, updateTodo, deleteTodo)
 
 ### Sécurité
@@ -186,24 +240,4 @@ nuxt-tp1/
 
 ## Auteur
 
-Christopher
-
-## Licence
-
-Ce projet est sous licence Apache 2.0. Voir le fichier [LICENSE](LICENSE) pour plus de détails.
-
-```
-Copyright 2026 Christopher
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-```
+Christopher Marie-Angélique

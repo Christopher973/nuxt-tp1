@@ -45,8 +45,38 @@ export const todoSchema = z.object({
 });
 
 /**
+ * Schéma de validation pour la modification du profil
+ */
+export const profileSchema = z.object({
+  fullName: z
+    .string()
+    .min(2, "Le nom complet doit contenir au moins 2 caractères")
+    .max(100, "Le nom complet ne peut pas dépasser 100 caractères"),
+  email: z.string().email("Adresse email invalide"),
+});
+
+/**
+ * Schéma de validation pour le changement de mot de passe
+ */
+export const passwordChangeSchema = z
+  .object({
+    currentPassword: z.string().min(1, "Le mot de passe actuel est requis"),
+    newPassword: z
+      .string()
+      .min(8, "Le nouveau mot de passe doit contenir au moins 8 caractères")
+      .max(72, "Le mot de passe ne peut pas dépasser 72 caractères"),
+    confirmNewPassword: z.string(),
+  })
+  .refine((data) => data.newPassword === data.confirmNewPassword, {
+    message: "Les mots de passe ne correspondent pas",
+    path: ["confirmNewPassword"],
+  });
+
+/**
  * Types dérivés des schémas Zod
  */
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 export type TodoInput = z.infer<typeof todoSchema>;
+export type ProfileInput = z.infer<typeof profileSchema>;
+export type PasswordChangeInput = z.infer<typeof passwordChangeSchema>;

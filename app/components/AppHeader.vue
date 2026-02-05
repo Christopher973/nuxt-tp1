@@ -7,14 +7,42 @@
 interface Props {
   isAuthenticated: boolean;
   userFullName?: string;
+  userAvatarUrl?: string | null;
 }
 
 interface Emits {
   (e: "logout"): void;
+  (e: "openProfile"): void;
 }
 
 defineProps<Props>();
 defineEmits<Emits>();
+
+/**
+ * Calcule les initiales à partir du nom complet
+ */
+function getInitials(fullName: string | undefined): string {
+  if (!fullName) return "?";
+
+  const names = fullName
+    .trim()
+    .split(" ")
+    .filter((n) => n.length > 0);
+  if (names.length === 0) return "?";
+
+  const firstName = names[0];
+  const lastName = names[names.length - 1];
+
+  if (names.length === 1 && firstName) {
+    return firstName.substring(0, 2).toUpperCase();
+  }
+
+  if (firstName && lastName && firstName.length > 0 && lastName.length > 0) {
+    return (firstName.charAt(0) + lastName.charAt(0)).toUpperCase();
+  }
+
+  return "?";
+}
 </script>
 
 <template>
@@ -44,10 +72,51 @@ defineEmits<Emits>();
 
         <!-- Actions utilisateur -->
         <div v-if="isAuthenticated" class="flex items-center gap-4">
-          <span class="text-sm text-gray-600">
-            Bonjour,
-            <span class="font-medium text-gray-900">{{ userFullName }}</span>
-          </span>
+          <!-- Bouton profil avec avatar -->
+          <button
+            type="button"
+            class="flex items-center gap-3 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+            title="Mon profil"
+            @click="$emit('openProfile')"
+          >
+            <!-- Avatar -->
+            <div
+              v-if="userAvatarUrl"
+              class="w-8 h-8 rounded-full overflow-hidden ring-2 ring-primary-100"
+            >
+              <img
+                :src="userAvatarUrl"
+                :alt="`Avatar de ${userFullName}`"
+                class="w-full h-full object-cover"
+              />
+            </div>
+            <div
+              v-else
+              class="w-8 h-8 rounded-full bg-primary-500 flex items-center justify-center text-white text-sm font-semibold ring-2 ring-primary-100"
+            >
+              {{ getInitials(userFullName) }}
+            </div>
+
+            <span class="hidden sm:block text-sm text-gray-600">
+              <span class="font-medium text-gray-900">{{ userFullName }}</span>
+            </span>
+
+            <!-- Icône chevron -->
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-4 w-4 text-gray-400 hidden sm:block"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                clip-rule="evenodd"
+              />
+            </svg>
+          </button>
+
+          <!-- Bouton déconnexion -->
           <button
             type="button"
             class="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors"
@@ -61,11 +130,11 @@ defineEmits<Emits>();
             >
               <path
                 fill-rule="evenodd"
-                d="M3 3a1 1 0 00-1 1v12a1 1 0 001 1h12a1 1 0 001-1V4a1 1 0 00-1-1H3zm11 4.414l-4.293 4.293a1 1 0 01-1.414 0L4 7.414 5.414 6l3.293 3.293L13 5l1 2.414z"
+                d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z"
                 clip-rule="evenodd"
               />
             </svg>
-            Déconnexion
+            <span class="hidden sm:inline">Déconnexion</span>
           </button>
         </div>
       </div>

@@ -43,3 +43,7 @@ Dans le cadre d'un cours de développement full stack pour apprendre à utiliser
 - Utiliser les meilleures pratiques de développement pour assurer la sécurité et la performance de l'application
 - Ne faire que les fonctionnalités demandées, pas de fonctionnalités supplémentaires
 - Ne pas utiliser de bibliothèques ou de frameworks supplémentaires sans l'approbation préalable
+
+## Profil de l'utilisateur
+
+L'application doit avoir une page de profil de l'utilisateur connecté, qui affiche les informations de l'utilisateur (nom complet et email) et permet à l'utilisateur de modifier ces informations (nom complet, email et mot de passe). Cette page doit être accessible uniquement aux utilisateurs authentifiés. Il peut également modifier son image de profil en téléchargeant une nouvelle image, qui sera stockée dans Supabase Storage et associée à son compte utilisateur :
