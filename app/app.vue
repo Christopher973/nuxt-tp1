@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { Todo, User } from "~/types";
 import type { LoginInput, RegisterInput, TodoInput } from "~/utils/validation";
+import mockData from "~/data/mock-todos.json";
 
 /**
  * Composant principal de l'application Todo
@@ -25,6 +26,21 @@ const showDeleteModal = ref(false);
 const todoToDelete = ref<Todo | null>(null);
 
 /**
+ * Charge les todos fictifs (simulation front-end)
+ */
+function loadMockTodos() {
+  isLoadingTodos.value = true;
+  // Simulation d'un délai de chargement
+  setTimeout(() => {
+    todos.value = mockData.todos.map((todo) => ({
+      ...todo,
+      createdAt: new Date(todo.createdAt),
+    })) as Todo[];
+    isLoadingTodos.value = false;
+  }, 500);
+}
+
+/**
  * Gestion de l'inscription (simulation front-end)
  */
 function handleRegister(data: RegisterInput) {
@@ -38,6 +54,8 @@ function handleRegister(data: RegisterInput) {
     createdAt: new Date(),
   };
   isAuthenticated.value = true;
+  // Charger les todos fictifs après l'inscription
+  loadMockTodos();
 }
 
 /**
@@ -54,6 +72,8 @@ function handleLogin(data: LoginInput) {
     createdAt: new Date(),
   };
   isAuthenticated.value = true;
+  // Charger les todos fictifs après la connexion
+  loadMockTodos();
 }
 
 /**
@@ -206,7 +226,7 @@ function openCreateForm() {
       <template v-else>
         <!-- Formulaire de création/modification -->
         <div v-if="showTodoForm" class="mb-8">
-          <TodoTodoForm
+          <TodoForm
             :todo="editingTodo"
             :is-editing="!!editingTodo"
             @submit="
@@ -217,7 +237,7 @@ function openCreateForm() {
         </div>
 
         <!-- Liste des todos -->
-        <TodoTodoList
+        <TodoList
           v-else
           :todos="todos"
           :is-loading="isLoadingTodos"

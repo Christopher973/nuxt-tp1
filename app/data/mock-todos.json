@@ -1,0 +1,52 @@
+{
+  "todos": [
+    {
+      "id": 1,
+      "title": "Configurer le projet Nuxt",
+      "description": "Installer les dépendances et configurer Supabase pour l'authentification et la base de données.",
+      "status": "termine",
+      "createdAt": "2026-02-01T10:00:00.000Z",
+      "userId": "user-1"
+    },
+    {
+      "id": 2,
+      "title": "Créer les composants d'interface",
+      "description": "Développer les formulaires de connexion, inscription et la liste des todos avec Tailwind CSS.",
+      "status": "termine",
+      "createdAt": "2026-02-02T14:30:00.000Z",
+      "userId": "user-1"
+    },
+    {
+      "id": 3,
+      "title": "Implémenter l'authentification Supabase",
+      "description": "Connecter les formulaires d'auth au backend Supabase avec gestion des sessions.",
+      "status": "en_cours",
+      "createdAt": "2026-02-03T09:15:00.000Z",
+      "userId": "user-1"
+    },
+    {
+      "id": 4,
+      "title": "Développer le CRUD des todos",
+      "description": "Créer les fonctions de création, lecture, modification et suppression des tâches.",
+      "status": "en_cours",
+      "createdAt": "2026-02-04T11:45:00.000Z",
+      "userId": "user-1"
+    },
+    {
+      "id": 5,
+      "title": "Ajouter les politiques RLS",
+      "description": "Configurer Row Level Security sur Supabase pour sécuriser l'accès aux données utilisateur.",
+      "status": "en_cours",
+      "createdAt": "2026-02-05T08:00:00.000Z",
+      "userId": "user-1"
+    },
+    {
+      "id": 6,
+      "title": "Tester l'application",
+      "description": "Effectuer des tests complets de toutes les fonctionnalités avant le déploiement.",
+      "status": "en_cours",
+      "createdAt": "2026-02-05T16:00:00.000Z",
+      "userId": "user-1"
+    }
+  ]
+}

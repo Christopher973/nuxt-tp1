@@ -147,7 +147,7 @@ const stats = computed(() => ({
 
     <!-- Liste des todos -->
     <div v-else-if="filteredTodos.length > 0" class="space-y-3">
-      <TodoTodoItem
+      <TodoItem
         v-for="todo in filteredTodos"
         :key="todo.id"
         :todo="todo"
