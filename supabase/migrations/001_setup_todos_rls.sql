@@ -1,22 +1,18 @@
 -- ============================================
--- Migration : Création de la table todos et configuration RLS
+-- Migration : Mise à jour de la table todos et configuration RLS
 -- À exécuter dans Supabase > SQL Editor
 -- ============================================
 
--- 1. Créer la table todos (si elle n'existe pas)
-CREATE TABLE IF NOT EXISTS todos (
-  id BIGSERIAL PRIMARY KEY,
-  title TEXT NOT NULL,
-  description TEXT,
-  status TEXT NOT NULL DEFAULT 'en_cours' CHECK (status IN ('en_cours', 'termine')),
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE
-);
+-- 1. Ajouter la colonne status si elle n'existe pas
+ALTER TABLE todos 
+ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'en_cours';
 
--- 2. Créer un index sur user_id pour optimiser les requêtes
+-- 2. Ajouter une contrainte CHECK sur status (supprimer d'abord si existe)
+ALTER TABLE todos DROP CONSTRAINT IF EXISTS todos_status_check;
+ALTER TABLE todos ADD CONSTRAINT todos_status_check CHECK (status IN ('en_cours', 'termine'));
+
+-- 3. Créer les index (si pas déjà créés)
 CREATE INDEX IF NOT EXISTS idx_todos_user_id ON todos(user_id);
-
--- 3. Créer un index sur created_at pour optimiser le tri
 CREATE INDEX IF NOT EXISTS idx_todos_created_at ON todos(created_at DESC);
 
 -- 4. Activer RLS sur la table todos
@@ -58,4 +54,4 @@ USING (auth.uid() = user_id);
 -- ============================================
 -- Vérification (optionnel)
 -- ============================================
--- SELECT * FROM pg_policies WHERE tablename = 'todos';
+-- SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'todos';
