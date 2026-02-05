@@ -1,132 +1,140 @@
 <script setup lang="ts">
-import type { Todo, User } from "~/types";
+import type { Todo } from "~/types";
 import type { LoginInput, RegisterInput, TodoInput } from "~/utils/validation";
-import mockData from "~/data/mock-todos.json";
 
 /**
  * Composant principal de l'application Todo
- * Gère l'état global de l'authentification et des todos
+ * Gère l'état global de l'authentification et des todos avec Supabase
  */
 
-// État d'authentification (simulé pour le front-end)
-const isAuthenticated = ref(false);
-const currentUser = ref<User | null>(null);
+// Composables Supabase
+const {
+  user: currentUser,
+  isAuthenticated,
+  isLoading: isAuthLoading,
+  error: authError,
+  signUp,
+  signIn,
+  signOut,
+  getSession,
+} = useAuth();
+
+const {
+  todos,
+  isLoading: isLoadingTodos,
+  error: todosError,
+  fetchTodos,
+  createTodo,
+  updateTodo,
+  deleteTodo,
+  toggleTodoStatus: toggleStatus,
+  clearTodos,
+} = useTodos();
+
+// État local de l'interface
 const authView = ref<"login" | "register">("login");
-
-// État des todos
-const todos = ref<Todo[]>([]);
-const isLoadingTodos = ref(false);
-
-// État du formulaire todo
 const showTodoForm = ref(false);
 const editingTodo = ref<Todo | null>(null);
-
-// État de la modal de suppression
 const showDeleteModal = ref(false);
 const todoToDelete = ref<Todo | null>(null);
 
+// Message d'erreur global
+const globalError = ref<string | null>(null);
+
 /**
- * Charge les todos fictifs (simulation front-end)
+ * Initialisation : vérifier la session au chargement
  */
-function loadMockTodos() {
-  isLoadingTodos.value = true;
-  // Simulation d'un délai de chargement
-  setTimeout(() => {
-    todos.value = mockData.todos.map((todo) => ({
-      ...todo,
-      createdAt: new Date(todo.createdAt),
-    })) as Todo[];
-    isLoadingTodos.value = false;
-  }, 500);
+onMounted(async () => {
+  await getSession();
+  if (isAuthenticated.value) {
+    await fetchTodos();
+  }
+});
+
+/**
+ * Gestion de l'inscription
+ */
+async function handleRegister(data: RegisterInput) {
+  globalError.value = null;
+  const result = await signUp(data.email, data.password, data.fullName);
+
+  if (result.success) {
+    await fetchTodos();
+  } else {
+    globalError.value = result.error || "Erreur lors de l'inscription";
+  }
 }
 
 /**
- * Gestion de l'inscription (simulation front-end)
+ * Gestion de la connexion
  */
-function handleRegister(data: RegisterInput) {
-  console.log("Inscription:", data);
-  // TODO: Implémenter l'appel à Supabase Auth
-  // Simulation d'une inscription réussie
-  currentUser.value = {
-    id: "user-1",
-    email: data.email,
-    fullName: data.fullName,
-    createdAt: new Date(),
-  };
-  isAuthenticated.value = true;
-  // Charger les todos fictifs après l'inscription
-  loadMockTodos();
-}
+async function handleLogin(data: LoginInput) {
+  globalError.value = null;
+  const result = await signIn(data.email, data.password);
 
-/**
- * Gestion de la connexion (simulation front-end)
- */
-function handleLogin(data: LoginInput) {
-  console.log("Connexion:", data);
-  // TODO: Implémenter l'appel à Supabase Auth
-  // Simulation d'une connexion réussie
-  currentUser.value = {
-    id: "user-1",
-    email: data.email,
-    fullName: "Utilisateur Test",
-    createdAt: new Date(),
-  };
-  isAuthenticated.value = true;
-  // Charger les todos fictifs après la connexion
-  loadMockTodos();
+  if (result.success) {
+    await fetchTodos();
+  } else {
+    globalError.value = result.error || "Erreur lors de la connexion";
+  }
 }
 
 /**
  * Gestion de la déconnexion
  */
-function handleLogout() {
-  console.log("Déconnexion");
-  // TODO: Implémenter l'appel à Supabase Auth
-  isAuthenticated.value = false;
-  currentUser.value = null;
-  todos.value = [];
+async function handleLogout() {
+  globalError.value = null;
+  const result = await signOut();
+
+  if (result.success) {
+    clearTodos();
+    showTodoForm.value = false;
+    editingTodo.value = null;
+    showDeleteModal.value = false;
+    todoToDelete.value = null;
+  } else {
+    globalError.value = result.error || "Erreur lors de la déconnexion";
+  }
 }
 
 /**
  * Gestion de la création d'une todo
  */
-function handleCreateTodo(data: TodoInput) {
-  console.log("Création todo:", data);
-  // TODO: Implémenter l'appel à Supabase
-  const newTodo: Todo = {
-    id: Date.now(),
-    title: data.title,
-    description: data.description || null,
-    status: data.status,
-    createdAt: new Date(),
-    userId: currentUser.value?.id || "",
-  };
-  todos.value.unshift(newTodo);
-  showTodoForm.value = false;
+async function handleCreateTodo(data: TodoInput) {
+  globalError.value = null;
+  const result = await createTodo(
+    data.title,
+    data.description || null,
+    data.status,
+  );
+
+  if (result.success) {
+    showTodoForm.value = false;
+  } else {
+    globalError.value = result.error || "Erreur lors de la création";
+  }
 }
 
 /**
  * Gestion de la modification d'une todo
  */
-function handleUpdateTodo(data: TodoInput) {
-  console.log("Modification todo:", data);
-  // TODO: Implémenter l'appel à Supabase
-  if (editingTodo.value) {
-    const index = todos.value.findIndex((t) => t.id === editingTodo.value?.id);
-    const existingTodo = todos.value[index];
-    if (index !== -1 && existingTodo) {
-      todos.value[index] = {
-        id: existingTodo.id,
-        title: data.title,
-        description: data.description || null,
-        status: data.status,
-        createdAt: existingTodo.createdAt,
-        userId: existingTodo.userId,
-      };
-    }
+async function handleUpdateTodo(data: TodoInput) {
+  globalError.value = null;
+
+  if (!editingTodo.value) return;
+
+  const result = await updateTodo(editingTodo.value.id, {
+    title: data.title,
+    description: data.description || null,
+    status: data.status,
+  });
+
+  if (result.success) {
+    showTodoForm.value = false;
+    editingTodo.value = null;
+  } else {
+    globalError.value = result.error || "Erreur lors de la modification";
   }
-  showTodoForm.value = false;
-  editingTodo.value = null;
 }
 
 /**
@@ -148,33 +156,30 @@ function openDeleteModal(todo: Todo) {
 /**
  * Confirmation de la suppression
  */
-function confirmDelete() {
-  console.log("Suppression todo:", todoToDelete.value);
-  // TODO: Implémenter l'appel à Supabase
-  if (todoToDelete.value) {
-    todos.value = todos.value.filter((t) => t.id !== todoToDelete.value?.id);
+async function confirmDelete() {
+  globalError.value = null;
+
+  if (!todoToDelete.value) return;
+
+  const result = await deleteTodo(todoToDelete.value.id);
+
+  if (result.success) {
+    showDeleteModal.value = false;
+    todoToDelete.value = null;
+  } else {
+    globalError.value = result.error || "Erreur lors de la suppression";
   }
-  showDeleteModal.value = false;
-  todoToDelete.value = null;
 }
 
 /**
  * Changement de statut d'une todo
  */
-function toggleTodoStatus(todo: Todo) {
-  console.log("Changement statut:", todo);
-  // TODO: Implémenter l'appel à Supabase
-  const index = todos.value.findIndex((t) => t.id === todo.id);
-  const existingTodo = todos.value[index];
-  if (index !== -1 && existingTodo) {
-    todos.value[index] = {
-      id: existingTodo.id,
-      title: existingTodo.title,
-      description: existingTodo.description,
-      status: todo.status === "en_cours" ? "termine" : "en_cours",
-      createdAt: existingTodo.createdAt,
-      userId: existingTodo.userId,
-    };
+async function handleToggleStatus(todo: Todo) {
+  globalError.value = null;
+  const result = await toggleStatus(todo.id);
+
+  if (!result.success) {
+    globalError.value = result.error || "Erreur lors du changement de statut";
   }
 }
 
@@ -193,6 +198,13 @@ function openCreateForm() {
   editingTodo.value = null;
   showTodoForm.value = true;
 }
+
+/**
+ * Ferme le message d'erreur global
+ */
+function dismissError() {
+  globalError.value = null;
+}
 </script>
 
 <template>
@@ -204,10 +216,83 @@ function openCreateForm() {
       @logout="handleLogout"
     />
 
+    <!-- Message d'erreur global -->
+    <div
+      v-if="globalError"
+      class="max-w-4xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-4"
+    >
+      <div
+        class="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-5 w-5 text-red-500 flex-shrink-0 mt-0.5"
+          viewBox="0 0 20 20"
+          fill="currentColor"
+        >
+          <path
+            fill-rule="evenodd"
+            d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+            clip-rule="evenodd"
+          />
+        </svg>
+        <div class="flex-1">
+          <p class="text-sm text-red-700">{{ globalError }}</p>
+        </div>
+        <button
+          type="button"
+          class="text-red-500 hover:text-red-700 transition-colors"
+          @click="dismissError"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-5 w-5"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+          >
+            <path
+              fill-rule="evenodd"
+              d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+              clip-rule="evenodd"
+            />
+          </svg>
+        </button>
+      </div>
+    </div>
+
     <!-- Contenu principal -->
     <main class="flex-1 max-w-4xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <!-- État de chargement initial -->
+      <div
+        v-if="isAuthLoading"
+        class="flex items-center justify-center min-h-[60vh]"
+      >
+        <div class="text-center">
+          <svg
+            class="animate-spin h-10 w-10 text-primary-600 mx-auto"
+            viewBox="0 0 24 24"
+          >
+            <circle
+              class="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              stroke-width="4"
+              fill="none"
+            />
+            <path
+              class="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+            />
+          </svg>
+          <p class="mt-4 text-gray-600">Chargement...</p>
+        </div>
+      </div>
+
       <!-- Vue non authentifiée : Formulaires d'auth -->
-      <template v-if="!isAuthenticated">
+      <template v-else-if="!isAuthenticated">
         <div class="flex items-center justify-center min-h-[60vh]">
           <AuthLoginForm
             v-if="authView === 'login'"
@@ -244,7 +329,7 @@ function openCreateForm() {
           @create="openCreateForm"
           @edit="openEditForm"
           @delete="openDeleteModal"
-          @toggle-status="toggleTodoStatus"
+          @toggle-status="handleToggleStatus"
         />
       </template>
     </main>
