@@ -1,0 +1,19 @@
+version: "3.9"
+
+services:
+  app:
+    image: ghcr.io/christopher973/nuxt-tp1:latest
+    ports:
+      - "127.0.0.1:3000:3000"
+    environment:
+      - NODE_ENV=production
+    secrets:
+      - supabase_url
+      - supabase_publishable_key
+    restart: unless-stopped
+
+secrets:
+  supabase_url:
+    file: /opt/nuxt-tp1/secrets/supabase_url.txt
+  supabase_publishable_key:
+    file: /opt/nuxt-tp1/secrets/supabase_publishable_key.txt
